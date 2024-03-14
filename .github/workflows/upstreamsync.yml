@@ -33,7 +33,7 @@ jobs:
     # Step 2: run the sync action
     - name: Sync upstream changes
       id: sync
-      uses: brave/go-sync
+      uses: brave/go-sync@master
       with:
         target_sync_branch: master
         # REQUIRED 'target_repo_token' exactly like this!

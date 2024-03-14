@@ -3,7 +3,7 @@ on:
   schedule:
      # actually, ~5 minutes is the highest
      # effective frequency you will get
-    - cron:  '* * * * *'
+    - cron:  '30 1 * * 1'
   workflow_dispatch:  # click the button on Github repo!
 jobs:
   merge:

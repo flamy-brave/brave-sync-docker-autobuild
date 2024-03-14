@@ -1,5 +1,5 @@
 #
-name: Create and publish a Docker image
+name: Build and publish server
 
 on:
   workflow_run:

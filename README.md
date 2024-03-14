@@ -1,3 +1,6 @@
+This is a fork that should have Docker autobuilds so that I (or you) don't have to build them manually.
+
+
 # Brave Sync Server v2
 
 A sync server implemented in go to communicate with Brave sync clients using

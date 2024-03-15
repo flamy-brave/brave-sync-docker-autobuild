@@ -6,6 +6,11 @@ on:
         workflows: ['Merge upstream branches']
         types: [completed]
   workflow_dispatch:  # click the button on Github repo!
+    inputs:
+      build-and-publish: # Adds a boolean option that appears during manual workflow run that makes it build and publish.
+        description: 'Build and Publish'
+        type: boolean
+        default: true
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
@@ -15,7 +20,7 @@ env:
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
   build-and-push-image:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }} || ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }} || ${{ inputs.build-and-publish == 'true' }}
     runs-on: ubuntu-latest
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:

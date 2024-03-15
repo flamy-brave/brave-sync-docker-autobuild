@@ -8,7 +8,7 @@ on:
   workflow_dispatch:  # click the button on Github repo!
     inputs:
       build-and-publish: # Adds a boolean option that appears during manual workflow run that makes it build and publish.
-        description: 'ENABLE THIS to Build and Publish'
+        description: 'Build and Publish'
         type: boolean
         default: true
 

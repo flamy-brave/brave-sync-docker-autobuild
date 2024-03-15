@@ -10,7 +10,7 @@ on:
       build-and-publish: # Adds a boolean option that appears during manual workflow run that makes it build and publish.
         description: 'ENABLE THIS to Build and Publish'
         type: boolean
-        default: false
+        default: true
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:

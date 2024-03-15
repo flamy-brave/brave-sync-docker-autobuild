@@ -3,7 +3,7 @@ name: Build and publish server
 
 on:
   workflow_run:
-        workflows: ['Merge upstream branches']
+        workflows: ['Upstream Sync']
         types: [completed]
   workflow_dispatch:  # click the button on Github repo!
     inputs:

@@ -8,9 +8,9 @@ on:
   workflow_dispatch:  # click the button on Github repo!
     inputs:
       build-and-publish: # Adds a boolean option that appears during manual workflow run that makes it build and publish.
-        description: 'Build and Publish'
+        description: 'ENABLE THIS to Build and Publish'
         type: boolean
-        default: true
+        default: false
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:

@@ -1,7 +1,7 @@
 
 This is a fork that should have Docker autobuilds so that I (or you) don't have to build them manually.
 
-I've also modified the [`docker-compose.yml`](https://github.com/flamy-brave/brave-sync-autobuild/blob/master/docker-compose.yml)
+I've also modified the [`docker-compose.yml`](https://github.com/flamy-brave/brave-sync-docker-autobuild/blob/master/docker-compose.yml)
 
 <br>
 <br>

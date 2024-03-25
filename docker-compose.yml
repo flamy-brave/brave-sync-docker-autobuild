@@ -5,23 +5,6 @@ networks:
     driver: bridge
 
 services:
-  dev:
-    image: ghcr.io/flamy-brave/brave-go-sync-server:master
-    depends_on:
-      - dynamo-local
-      - redis
-    networks:
-      - sync
-    environment:
-      - PPROF_ENABLED=true
-      - SENTRY_DSN
-      - ENV=local
-      - DEBUG=1
-      - AWS_ACCESS_KEY_ID=GOSYNC
-      - AWS_SECRET_ACCESS_KEY=GOSYNC
-      - AWS_REGION=us-west-2
-      - AWS_ENDPOINT=http://dynamo-local:8000
-      - REDIS_URL=redis:6379
   web:
     image: ghcr.io/flamy-brave/brave-go-sync-server:master
     ports:

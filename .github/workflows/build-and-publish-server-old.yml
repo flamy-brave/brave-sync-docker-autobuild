@@ -3,7 +3,7 @@ name: Build and publish server OLD
 
 on:
   workflow_run:
-        workflows: ['Upstream Sync']
+        workflows: ['Upstream Sync Old']
         types: [completed]
   workflow_dispatch:  # click the button on Github repo!
     inputs:

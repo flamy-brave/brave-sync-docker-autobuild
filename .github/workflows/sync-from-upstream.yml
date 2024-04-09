@@ -22,7 +22,7 @@ jobs:
       with:
         # optional: set the branch to checkout,
         # sync action checks out your 'target_sync_branch' anyway
-        ref:  master
+        ref: master
         # REQUIRED if your upstream repo is private (see wiki)
         persist-credentials: false
 

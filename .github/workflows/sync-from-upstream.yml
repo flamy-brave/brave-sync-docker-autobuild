@@ -54,7 +54,7 @@ jobs:
       if: steps.sync.outputs.has_new_commits == 'true'
       uses: mathze/workflow-dispatch-action@v1.1.0
       with:
-        workflow-name: build-and-publish-server.yml
+        workflow-name: Build and publish server
         token: ${{ secrets.UPSTREAM_REPO_SECRET }}
     
     - name: No new commits

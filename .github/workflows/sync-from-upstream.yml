@@ -49,6 +49,7 @@ jobs:
       with:
         workflow-name: build-and-publish-server.yml
         token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+        run: echo "New commits were found to sync."
     
     - name: Build and Publish Dynamo
       if: steps.sync.outputs.has_new_commits == 'true'
@@ -56,6 +57,7 @@ jobs:
       with:
         workflow-name: Build and publish server
         token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+        run: echo "New commits were found to sync."
     
     - name: No new commits
       if: steps.sync.outputs.has_new_commits == 'false'

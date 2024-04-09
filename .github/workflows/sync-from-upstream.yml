@@ -45,19 +45,7 @@ jobs:
     # Step 3: Build and Publish if new commits were merged, otherwise stop
     - name: Build and Publish Server
       if: steps.sync.outputs.has_new_commits == 'true' && ${{ inputs.sync_test_mode != 'true' }}
-      uses: mathze/workflow-dispatch-action@v1.1.0
-      with:
-        workflow-name: build-and-publish-server.yml
-        token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
-        run: echo "New commits were found to sync."
-    
-    - name: Build and Publish Dynamo
-      if: steps.sync.outputs.has_new_commits == 'true'
-      uses: mathze/workflow-dispatch-action@v1.1.0
-      with:
-        workflow-name: Build and publish server
-        token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
-        run: echo "New commits were found to sync."
+      run: echo "New commits were found to sync."
     
     - name: No new commits
       if: steps.sync.outputs.has_new_commits == 'false'

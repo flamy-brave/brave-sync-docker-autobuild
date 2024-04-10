@@ -48,7 +48,7 @@ jobs:
       
     # Step 3: Build and Publish if new commits were merged, otherwise stop
     - name: Build and Publish Server
-      if: ${{ inputs.force_build_and_publish == 'true' }}
+      if: ${{ inputs.force_build_and_publish }}
       uses: mathze/workflow-dispatch-action@v1.1.0
       with:
         workflow-name: build-and-publish-server.yml
@@ -56,7 +56,7 @@ jobs:
         run: echo "Test"
         
     - name: Build and Publish Dynamo
-      if: ${{ inputs.force_build_and_publish == 'true' }}
+      if: inputs.force_build_and_publish == 'true'
       uses: mathze/workflow-dispatch-action@v1.1.0
       with:
         workflow-name: build-and-publish-dynamo.yml

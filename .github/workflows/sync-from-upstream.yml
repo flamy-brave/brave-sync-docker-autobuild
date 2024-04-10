@@ -53,6 +53,7 @@ jobs:
       with:
         workflow-name: build-and-publish-server.yml
         token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+        run: echo "Test"
         
     - name: Build and Publish Dynamo
       if: ${{ inputs.force_build_and_publish == 'true' }}
@@ -60,6 +61,7 @@ jobs:
       with:
         workflow-name: build-and-publish-dynamo.yml
         token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+        run: echo "Test"
         
     - name: New commits
       if: ${{ steps.sync.outputs.has_new_commits == 'true' }}

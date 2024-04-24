@@ -6,7 +6,7 @@ on:
   workflow_dispatch:  # click the button on Github repo!
     inputs:
       sync_test_mode: # Adds a boolean option that appears during manual workflow run for easy test mode config
-        description: 'Fork Sync Test Mode'
+        description: 'Test Mode'
         type: boolean
         default: false
       force_build_and_publish: # Adds a boolean option that appears during manual workflow run for easy test mode config

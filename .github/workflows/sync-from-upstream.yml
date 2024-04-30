@@ -38,10 +38,10 @@ jobs:
       with:
         target_sync_branch: master
         # REQUIRED 'target_repo_token' exactly like this!
-        target_repo_token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+        target_repo_token: ${{ secrets.GITHUB_TOKEN }}
         upstream_sync_branch: master
         upstream_sync_repo: brave/go-sync
-        upstream_repo_access_token: ${{ secrets.UPSTREAM_REPO_SECRET }}
+        upstream_repo_access_token: ${{ secrets.GITHUB_TOKEN }}
 
         # Set test_mode true during manual dispatch to run tests instead of the true action!!
         test_mode: ${{ inputs.sync_test_mode }}

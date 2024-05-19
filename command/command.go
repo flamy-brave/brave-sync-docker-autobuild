@@ -14,18 +14,20 @@ import (
 
 var (
 	// Could be modified in tests.
-	maxGUBatchSize       = 500
-	maxClientObjectQuota = 85000
+	maxGUBatchSize              = 500
+	maxClientObjectQuota        = 50000
+	maxClientHistoryObjectQuota = 30000
 )
 
 const (
-	storeBirthday              string = "1"
-	maxCommitBatchSize         int32  = 90
-	setSyncPollInterval        int32  = 30
-	nigoriTypeID               int32  = 47745
-	deviceInfoTypeID           int    = 154522
-	historyTypeID              int    = 963985
-	maxActiveDevices           int    = 50
+	storeBirthday       string = "1"
+	maxCommitBatchSize  int32  = 90
+	setSyncPollInterval int32  = 30
+	nigoriTypeID        int32  = 47745
+	deviceInfoTypeID    int    = 154522
+	maxActiveDevices    int    = 50
+	historyCountTypeStr string = "history"
+	normalCountTypeStr  string = "normal"
 )
 
 // handleGetUpdatesRequest handles GetUpdatesMessage and fills
@@ -192,6 +194,30 @@ func handleGetUpdatesRequest(cache *cache.Cache, guMsg *sync_pb.GetUpdatesMessag
 	return &errCode, nil
 }
 
+func getItemCounts(cache *cache.Cache, db datastore.Datastore, clientID string) (*datastore.ClientItemCounts, int, int, error) {
+	itemCounts, err := db.GetClientItemCount(clientID)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	newNormalCount, newHistoryCount, err := getInterimItemCounts(cache, clientID, false)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	return itemCounts, newNormalCount, newHistoryCount, nil
+}
+
+func getInterimItemCounts(cache *cache.Cache, clientID string, clear bool) (int, int, error) {
+	newNormalCount, err := cache.GetInterimCount(context.Background(), clientID, normalCountTypeStr, clear)
+	if err != nil {
+		return 0, 0, err
+	}
+	newHistoryCount, err := cache.GetInterimCount(context.Background(), clientID, historyCountTypeStr, clear)
+	if err != nil {
+		return 0, 0, err
+	}
+	return newNormalCount, newHistoryCount, nil
+}
+
 // handleCommitRequest handles the commit message and fills the commit response.
 // For each commit entry:
 //   - new sync entity is created and inserted into the database if version is 0.
@@ -206,12 +232,23 @@ func handleCommitRequest(cache *cache.Cache, commitMsg *sync_pb.CommitMessage, c
 		return &errCode, nil
 	}
 
-	itemCount, err := db.GetClientItemCount(clientID)
-	count := 0
+	itemCounts, newNormalCount, newHistoryCount, err := getItemCounts(cache, db, clientID)
 	if err != nil {
 		log.Error().Err(err).Msg("Get client's item count failed")
 		errCode = sync_pb.SyncEnums_TRANSIENT_ERROR
 		return &errCode, fmt.Errorf("error getting client's item count: %w", err)
+	}
+	currentNormalItemCount := itemCounts.ItemCount
+	currentHistoryItemCount := itemCounts.SumHistoryCounts()
+
+	boostedQuotaAddition := 0
+	if currentHistoryItemCount > maxClientHistoryObjectQuota {
+		// Sync chains with history entities stored before the history count fix
+		// may have history counts greater than the new history item quota.
+		// "Boost" the quota with the difference between the history quota and count,
+		// so users can start syncing other entities immediately, instead of waiting for the
+		// history TTL to get rid of the excess items.
+		boostedQuotaAddition = min(maxClientObjectQuota-maxClientHistoryObjectQuota, currentHistoryItemCount-maxClientHistoryObjectQuota)
 	}
 
 	commitRsp.Entryresponse = make([]*sync_pb.CommitResponse_EntryResponse, len(commitMsg.Entries))
@@ -242,8 +279,9 @@ func handleCommitRequest(cache *cache.Cache, commitMsg *sync_pb.CommitMessage, c
 
 		oldVersion := *entityToCommit.Version
 		isUpdateOp := oldVersion != 0
+		isHistoryRelatedItem := *entityToCommit.DataType == datastore.HistoryTypeID || *entityToCommit.DataType == datastore.HistoryDeleteDirectiveTypeID
 		*entityToCommit.Version = *entityToCommit.Mtime
-		if *entityToCommit.DataType == historyTypeID {
+		if *entityToCommit.DataType == datastore.HistoryTypeID {
 			// Check if item exists using client_unique_tag
 			isUpdateOp, err = db.HasItem(clientID, *entityToCommit.ClientDefinedUniqueTag)
 			if err != nil {
@@ -256,32 +294,41 @@ func handleCommitRequest(cache *cache.Cache, commitMsg *sync_pb.CommitMessage, c
 		}
 
 		if !isUpdateOp { // Create
-			if itemCount+count >= maxClientObjectQuota {
+			if currentNormalItemCount+currentHistoryItemCount+newNormalCount+newHistoryCount >= maxClientObjectQuota+boostedQuotaAddition {
 				rspType := sync_pb.CommitResponse_OVER_QUOTA
 				entryRsp.ResponseType = &rspType
-				entryRsp.ErrorMessage = aws.String(fmt.Sprintf("There are already %v non-deleted objects in store", itemCount))
+				entryRsp.ErrorMessage = aws.String(fmt.Sprintf("There are already %v non-deleted objects in store", currentNormalItemCount+currentHistoryItemCount))
 				continue
 			}
 
-			conflict, err := db.InsertSyncEntity(entityToCommit)
-			if err != nil {
-				log.Error().Err(err).Msg("Insert sync entity failed")
-				rspType := sync_pb.CommitResponse_TRANSIENT_ERROR
-				if conflict {
-					rspType = sync_pb.CommitResponse_CONFLICT
+			if !isHistoryRelatedItem || currentHistoryItemCount+newHistoryCount < maxClientHistoryObjectQuota {
+				// Insert all non-history items. For history items, ignore any items above history quoto
+				// and lie to the client about the objects being synced instead of returning OVER_QUOTA
+				// so the client can continue to sync other entities.
+				conflict, err := db.InsertSyncEntity(entityToCommit)
+				if err != nil {
+					log.Error().Err(err).Msg("Insert sync entity failed")
+					rspType := sync_pb.CommitResponse_TRANSIENT_ERROR
+					if conflict {
+						rspType = sync_pb.CommitResponse_CONFLICT
+					}
+					entryRsp.ResponseType = &rspType
+					entryRsp.ErrorMessage = aws.String(fmt.Sprintf("Insert sync entity failed: %v", err.Error()))
+					continue
 				}
-				entryRsp.ResponseType = &rspType
-				entryRsp.ErrorMessage = aws.String(fmt.Sprintf("Insert sync entity failed: %v", err.Error()))
-				continue
-			}
 
-			// Save client-generated to server-generated ID mapping when committing
-			// a new entry with OriginatorClientItemID (client-generated ID).
-			if entityToCommit.OriginatorClientItemID != nil {
-				idMap[*entityToCommit.OriginatorClientItemID] = entityToCommit.ID
-			}
+				// Save client-generated to server-generated ID mapping when committing
+				// a new entry with OriginatorClientItemID (client-generated ID).
+				if entityToCommit.OriginatorClientItemID != nil {
+					idMap[*entityToCommit.OriginatorClientItemID] = entityToCommit.ID
+				}
 
-			count++
+				if isHistoryRelatedItem {
+					newHistoryCount, err = cache.IncrementInterimCount(context.Background(), clientID, historyCountTypeStr, false)
+				} else {
+					newNormalCount, err = cache.IncrementInterimCount(context.Background(), clientID, normalCountTypeStr, false)
+				}
+			}
 		} else { // Update
 			conflict, deleted, err := db.UpdateSyncEntity(entityToCommit, oldVersion)
 			if err != nil {
@@ -297,8 +344,17 @@ func handleCommitRequest(cache *cache.Cache, commitMsg *sync_pb.CommitMessage, c
 				continue
 			}
 			if deleted {
-				count--
+				if isHistoryRelatedItem {
+					newHistoryCount, err = cache.IncrementInterimCount(context.Background(), clientID, historyCountTypeStr, true)
+				} else {
+					newNormalCount, err = cache.IncrementInterimCount(context.Background(), clientID, normalCountTypeStr, true)
+				}
 			}
+		}
+		if err != nil {
+			log.Error().Err(err).Msg("Interim count update failed")
+			errCode = sync_pb.SyncEnums_TRANSIENT_ERROR
+			return &errCode, fmt.Errorf("Interim count update failed: %w", err)
 		}
 
 		typeMtimeMap[*entityToCommit.DataType] = *entityToCommit.Mtime
@@ -310,12 +366,19 @@ func handleCommitRequest(cache *cache.Cache, commitMsg *sync_pb.CommitMessage, c
 		entryRsp.Mtime = entityToCommit.Mtime
 	}
 
+	newNormalCount, newHistoryCount, err = getInterimItemCounts(cache, clientID, true)
+	if err != nil {
+		log.Error().Err(err).Msg("Get interim item counts failed")
+		errCode = sync_pb.SyncEnums_TRANSIENT_ERROR
+		return &errCode, fmt.Errorf("error getting interim item count: %w", err)
+	}
+
 	// Save (clientID#dataType, mtime) into cache after writing into DB.
 	for dataType, mtime := range typeMtimeMap {
 		cache.SetTypeMtime(context.Background(), clientID, dataType, mtime)
 	}
 
-	err = db.UpdateClientItemCount(clientID, count)
+	err = db.UpdateClientItemCount(itemCounts, newNormalCount, newHistoryCount)
 	if err != nil {
 		// We only impose a soft quota limit on the item count for each client, so
 		// we only log the error without further actions here. The reason of this
@@ -375,8 +438,8 @@ func HandleClientToServerMessage(cache *cache.Cache, pb *sync_pb.ClientToServerM
 	// Commit.
 	pbRsp.StoreBirthday = aws.String(storeBirthday)
 	pbRsp.ClientCommand = &sync_pb.ClientCommand{
-		SetSyncPollInterval:        aws.Int32(setSyncPollInterval),
-		MaxCommitBatchSize:         aws.Int32(maxCommitBatchSize)}
+		SetSyncPollInterval: aws.Int32(setSyncPollInterval),
+		MaxCommitBatchSize:  aws.Int32(maxCommitBatchSize)}
 
 	var err error
 	if pb.MessageContents == nil {

@@ -32,6 +32,7 @@ services:
     networks:
       - sync
   redis:
+    # Change out the version number for "latest" if you don't want to update this file.
     image: public.ecr.aws/docker/library/redis:6.2
     ports:
       - "6379:6379"

@@ -1,12 +1,16 @@
 
-This is a fork that should have Docker autobuilds so that I (or you) don't have to build them manually.
+This is a fork that should have Docker ~~autobuilds so that I (or you) don't have to build them manually~~.
+I now manually trigger builds.
 
 I've also modified the [`docker-compose.yml`](https://github.com/flamy-brave/brave-sync-docker-autobuild/blob/master/docker-compose.yml) which should be all you need to run it.
 
-The autobuilds should publish about 10 minutes before 7:00 AM UTC (2:00 AM EST or 3:00 AM EDT, Eastern Daylight Savings Time) on Sunday.
+~~The autobuilds should publish about 10 minutes before 7:00 AM UTC (2:00 AM EST or 3:00 AM EDT, Eastern Daylight Savings Time) on Sunday.~~
 
-(It merges from the upstream repo at 6:45 AM UTC and right after merging starts building which takes about a minute and a half so as long as there is nothing stopping a merge it should publish at 6:47 or 6:48 AM UTC but you should always give it some wiggle room to do its thing.)
-<h3>Autobuilds will not build and publish if no changes were made upstream.</h3>
+~~(It merges from the upstream repo at 6:45 AM UTC and right after merging starts building which takes about a minute and a half so as long as there is nothing stopping a merge it should publish at 6:47 or 6:48 AM UTC but you should always give it some wiggle room to do its thing.)~~
+<h3>
+  
+  ~~Autobuilds will not build and publish if no changes were made upstream.~~
+  </h3>
 
 <br>
 <br>

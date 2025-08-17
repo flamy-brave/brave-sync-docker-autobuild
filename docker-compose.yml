@@ -27,6 +27,8 @@ services:
     image: ghcr.io/flamy-brave/brave-go-sync-dynamo:master
     ports:
       - "8000:8000"
+    volumes:
+      - ./dynamo-data:/db
     networks:
       - sync
   redis:

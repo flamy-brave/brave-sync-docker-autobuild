@@ -1,12 +1,16 @@
-version: '3.4'
-
 networks:
   sync:
     driver: bridge
 
 services:
   dev:
-    image: ghcr.io/flamy-brave/brave-go-sync-server:master
+    build:
+      context: .
+      target: builder
+      args:
+        VERSION: "${VERSION}"
+        COMMIT: "${COMMIT}"
+        BUILD_TIME: "${BUILD_TIME}"
     depends_on:
       - dynamo-local
       - redis
@@ -23,7 +27,13 @@ services:
       - AWS_ENDPOINT=http://dynamo-local:8000
       - REDIS_URL=redis:6379
   web:
-    image: ghcr.io/flamy-brave/brave-go-sync-server:master
+    build:
+      context: .
+      target: artifact
+      args:
+        VERSION: "${VERSION}"
+        COMMIT: "${COMMIT}"
+        BUILD_TIME: "${BUILD_TIME}"
     ports:
       - "8295:8295"
     depends_on:
@@ -43,13 +53,17 @@ services:
       - TABLE_NAME=client-entity-dev
       - REDIS_URL=redis:6379
   dynamo-local:
-    image: ghcr.io/flamy-brave/brave-go-sync-dynamo:master
+    build:
+      context: .
+      dockerfile: dynamo.Dockerfile
     ports:
       - "8000:8000"
+    volumes:
+      - ./dynamo-data:/db
     networks:
       - sync
   redis:
-    image: public.ecr.aws/ubuntu/redis:latest
+    image: public.ecr.aws/docker/library/redis:6.2
     ports:
       - "6379:6379"
     environment:

@@ -1,8 +1,27 @@
+version: '3.4'
+
 networks:
   sync:
     driver: bridge
 
 services:
+  dev:
+    image: ghcr.io/flamy-brave/brave-go-sync-server:master
+    depends_on:
+      - dynamo-local
+      - redis
+    networks:
+      - sync
+    environment:
+      - PPROF_ENABLED=true
+      - SENTRY_DSN
+      - ENV=local
+      - DEBUG=1
+      - AWS_ACCESS_KEY_ID=GOSYNC
+      - AWS_SECRET_ACCESS_KEY=GOSYNC
+      - AWS_REGION=us-west-2
+      - AWS_ENDPOINT=http://dynamo-local:8000
+      - REDIS_URL=redis:6379
   web:
     image: ghcr.io/flamy-brave/brave-go-sync-server:master
     ports:
@@ -30,8 +49,7 @@ services:
     networks:
       - sync
   redis:
-    # Change out the version number for "latest" if you don't want to update this file.
-    image: public.ecr.aws/docker/library/redis:6.2
+    image: public.ecr.aws/ubuntu/redis:latest
     ports:
       - "6379:6379"
     environment:

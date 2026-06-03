@@ -4,7 +4,7 @@ networks:
 
 services:
   web:
-    image: ghcr.io/flamy-brave/brave-go-sync-server:master
+    image: ghcr.io/flamy-brave/brave-go-sync-server:latest
     ports:
       - "8295:8295"
     depends_on:
@@ -24,7 +24,7 @@ services:
       - TABLE_NAME=client-entity-dev
       - REDIS_URL=redis:6379
   dynamo-local:
-    image: ghcr.io/flamy-brave/brave-go-sync-dynamo:master
+    image: ghcr.io/flamy-brave/brave-go-sync-dynamo:latest
     ports:
       - "8000:8000"
     volumes:

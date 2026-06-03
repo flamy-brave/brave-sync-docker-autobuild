@@ -1,3 +1,8 @@
+# Important Info
+
+Use the [`docker-compose.yml`](https://github.com/flamy-brave/brave-sync-docker-autobuild/blob/master/docker-compose.yml) and either the `latest` tag or a specific [release](https://github.com/flamy-brave/brave-sync-docker-autobuild/releases) tag for the images provided in this repo.
+
+# ~~Auto~~builds
 
 This is a fork that should have Docker ~~autobuilds so that I (or you) don't have to build them manually~~.
 I now manually trigger builds.

@@ -25,8 +25,8 @@ services:
       - REDIS_URL=redis:6379
   dynamo-local:
     image: ghcr.io/flamy-brave/brave-go-sync-dynamo:latest
-    ports:
-      - "8000:8000"
+    # ports:          # Not needed because containers connect to each other and only the web container needs to be exposed.
+    #   - "8000:8000"
     volumes:
       - ./dynamo-data:/db
     networks:
@@ -34,8 +34,8 @@ services:
   redis:
     # Change out the version number for "latest" if you don't want to update this file.
     image: public.ecr.aws/docker/library/redis:6.2
-    ports:
-      - "6379:6379"
+    # ports:          # Not needed because containers connect to each other and only the web container needs to be exposed.
+    #   - "6379:6379"
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     networks:
